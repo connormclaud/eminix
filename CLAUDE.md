@@ -17,16 +17,24 @@ cargo fmt --check    # Check formatting
 
 Eminix is a modern, performance-oriented, extensible text-based operating environment written in Rust, where text is the interface for everything. It targets the "advanced casual key presser" — users who want a single, powerful, keyboard-driven environment for diverse workflows (writing, research, file management, task tracking, and more). Think the vision of Emacs rebuilt on a modern foundation.
 
-Uses Rust edition 2024 with tokio for async runtime.
+Uses Rust edition 2024.
 
-## Architecture
+## Current State
+
+Implementing EEE 002 (The Provable Core). Currently:
+- `src/gap_buffer.rs` — gap buffer data structure with insert, delete, cursor movement, and auto-grow
+- `src/lib.rs` — library crate exposing `GapBuffer`
+- `tests/gap_buffer.rs` — integration tests (12 tests)
+- `doc/gap_buffer.md` — reference doc for the gap buffer design
+
+## Architecture (Planned)
 
 The design follows a **decentralized, event-driven, actor model** with a microkernel philosophy. Key architectural docs live in `eee/` as "EEE" (Eminix Enhancement EEE) proposals — start with `eee/EEE 001.md` for the full specification.
 
-### Core Concepts
+### Core Concepts (from EEE 001, not yet implemented)
 
-- **Event Priority System**: Events are either `Critical` (must never be dropped, e.g. user input) or `Ephemeral` (can be dropped under load, e.g. UI updates). This is the central QoS mechanism — see `src/events.rs`.
-- **EventBus** (`src/event_bus.rs`): Broadcast channel (tokio MPMC) for **ephemeral events only**. Critical events use separate lossless bounded channels with backpressure. The bus panics if you try to publish a Critical event on it.
+- **Event Priority System**: Events are either `Critical` (must never be dropped, e.g. user input) or `Ephemeral` (can be dropped under load, e.g. UI updates).
+- **EventBus**: Broadcast channel (tokio MPMC) for **ephemeral events only**. Critical events use separate lossless bounded channels with backpressure.
 - **Process Isolation**: UI runs as a separate process from the core daemon, communicating via IPC. A UI crash cannot corrupt editor state.
 - **Actor Isolation**: Components within the core are isolated actors with their own mailboxes and priority queues.
 
